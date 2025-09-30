@@ -5,7 +5,7 @@ A modern web application for navigating bus routes in Dhaka, Bangladesh. Built w
 ## 🚀 Features
 
 - **Smart Route Planning** - Find the best bus routes with minimal transfers
-- **Real-time Information** - Get accurate fare estimates and journey times  
+- **Real-time Information** - Get accurate fare estimates and journey times
 - **Interactive Maps** - Visual route planning with Leaflet maps
 - **Multi-language Support** - English and Bangla interface
 - **Community Feedback** - Submit route updates and feedback
@@ -16,12 +16,12 @@ A modern web application for navigating bus routes in Dhaka, Bangladesh. Built w
 - **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion
 - **Maps**: Leaflet.js with OpenStreetMap
 - **Database**: Supabase (PostgreSQL)
-- **Deployment**: Vercel/Netlify ready
+- **Deployment**: Vercel ready
 
 ## 🔧 Setup Instructions
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Supabase account
 
@@ -51,60 +51,13 @@ A modern web application for navigating bus routes in Dhaka, Bangladesh. Built w
 
 4. **Database Setup**
    
-   Create these tables in your Supabase database:
+   Create tables in Supabase for the following data:
    
-   ```sql
-   -- Stops table
-   CREATE TABLE public.stops (
-     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     name text NOT NULL,
-     lat double precision,
-     lng double precision,
-     nearby_landmarks text[] DEFAULT '{}',
-     created_at timestamptz DEFAULT now()
-   );
-   
-   -- Routes table  
-   CREATE TABLE public.routes (
-     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     name text NOT NULL,
-     stops text[] NOT NULL,
-     color text,
-     route_polyline jsonb,
-     frequency text
-   );
-   
-   -- Fares table
-   CREATE TABLE public.fares (
-     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     route_id uuid REFERENCES public.routes(id) ON DELETE CASCADE,
-     start_stop_id text NOT NULL,
-     end_stop_id text NOT NULL,
-     fare_value numeric NOT NULL,
-     estimated_flag boolean DEFAULT false
-   );
-   
-   -- User feedback table
-   CREATE TABLE public.user_feedback (
-     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     feedback_type text,
-     stop_id text,
-     route_id uuid,
-     description text NOT NULL,
-     contact_email text,
-     status text DEFAULT 'pending',
-     created_at timestamptz DEFAULT now()
-   );
-   
-   -- Favorites table
-   CREATE TABLE public.favorites (
-     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-     user_id uuid,
-     from_stop_id text NOT NULL,
-     to_stop_id text NOT NULL,
-     created_at timestamptz DEFAULT now()
-   );
-   ```
+   - **Stops**: Stores bus stop information, coordinates, and nearby landmarks
+   - **Routes**: Stores bus routes, stops, colors, frequency, and polyline data
+   - **Fares**: Stores fare details between stops on a route
+   - **User Feedback**: Stores feedback submitted by users
+   - **Favorites**: Stores users' favorite routes
 
 5. **Start development server**
    ```bash
@@ -123,13 +76,15 @@ A modern web application for navigating bus routes in Dhaka, Bangladesh. Built w
 
 ### Vercel (Recommended)
 1. Connect your GitHub repository to Vercel
-2. Add environment variables in Vercel dashboard
+2. Add environment variables in the Vercel dashboard
 3. Deploy automatically on push
 
-### Netlify
-1. Connect your GitHub repository to Netlify  
-2. Add environment variables in Netlify dashboard
-3. Deploy automatically on push
+## 🖼️ Screenshots
+
+Add your screenshots here to showcase the app interface.
+
+Example:
+
 
 ## 🤝 Contributing
 
