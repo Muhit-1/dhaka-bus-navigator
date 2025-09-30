@@ -81,9 +81,7 @@ A modern web application for navigating bus routes in Dhaka, Bangladesh. Built w
 
 ## 🖼️ Screenshots
 
-Add your screenshots here to showcase the app interface.
-
-Example:
+![Home Page](https://i.ibb.co/RGHMc5x2/screencapture-localhost-3000-2025-10-01-04-33-13.png)
 
 
 ## 🤝 Contributing
