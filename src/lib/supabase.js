@@ -173,25 +173,74 @@ export const searchRoutes = async (fromStopId, toStopId) => {
 // - 2.42 tk per km
 // - Minimum fare 10 tk
 // - Round to nearest multiple of 5 (21.22 -> 20, 23 -> 25)
+// Robustness:
+// - Ignore segments with invalid or extreme coordinates
+// - Collapse consecutive duplicate stops
+// - Drop outlier segments (likely bad data) using median-based gate
+// - Fallback to endpoint straight-line distance if segment sum is zero
 const calculateDistanceFare = (orderedStopIds, stopMap) => {
   const ratePerKm = 2.42
   const minFare = 10
 
-  let totalKm = 0
-  for (let i = 0; i < orderedStopIds.length - 1; i++) {
-    const a = stopMap.get(String(orderedStopIds[i]))
-    const b = stopMap.get(String(orderedStopIds[i + 1]))
-    if (!a || !b || typeof a.lat !== 'number' || typeof a.lng !== 'number' || typeof b.lat !== 'number' || typeof b.lng !== 'number') {
-      continue
+  if (!Array.isArray(orderedStopIds) || orderedStopIds.length < 2) {
+    return minFare
+  }
+
+  // Collapse consecutive duplicate IDs
+  const dedupIds = []
+  for (let i = 0; i < orderedStopIds.length; i++) {
+    const id = String(orderedStopIds[i])
+    if (i === 0 || id !== String(orderedStopIds[i - 1])) {
+      dedupIds.push(id)
     }
-    totalKm += haversineKm(a.lat, a.lng, b.lat, b.lng)
+  }
+
+  // Build segment distances
+  const segmentKms = []
+  for (let i = 0; i < dedupIds.length - 1; i++) {
+    const a = stopMap.get(dedupIds[i])
+    const b = stopMap.get(dedupIds[i + 1])
+    if (!isValidCoordStop(a) || !isValidCoordStop(b)) continue
+    const km = haversineKm(a.lat, a.lng, b.lat, b.lng)
+    // Absolute cap for a city segment (ignore clearly bad data)
+    if (km > 15) continue
+    segmentKms.push(km)
+  }
+
+  // Median-based outlier filtering (drop segments > 3x median)
+  let filtered = segmentKms
+  if (segmentKms.length >= 3) {
+    const med = median(segmentKms)
+    const gate = med * 3
+    filtered = segmentKms.filter(km => km <= Math.max(gate, 1))
+  }
+
+  let totalKm = filtered.reduce((s, km) => s + km, 0)
+
+  // Fallback: use endpoint straight-line distance if segments sum to 0
+  if (totalKm === 0) {
+    const first = stopMap.get(dedupIds[0])
+    const last = stopMap.get(dedupIds[dedupIds.length - 1])
+    if (isValidCoordStop(first) && isValidCoordStop(last)) {
+      totalKm = haversineKm(first.lat, first.lng, last.lat, last.lng)
+    }
   }
 
   let rawFare = totalKm * ratePerKm
   if (rawFare < minFare) rawFare = minFare
-  // round to nearest multiple of 5
   const rounded = Math.round(rawFare / 5) * 5
   return rounded
+}
+
+function isValidCoordStop(s) {
+  return s && typeof s.lat === 'number' && typeof s.lng === 'number' &&
+    s.lat >= -90 && s.lat <= 90 && s.lng >= -180 && s.lng <= 180
+}
+
+function median(arr) {
+  const a = [...arr].sort((x, y) => x - y)
+  const mid = Math.floor(a.length / 2)
+  return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2
 }
 
 function haversineKm(lat1, lon1, lat2, lon2) {
