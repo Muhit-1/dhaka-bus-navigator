@@ -1,88 +1,71 @@
 # Dhaka Bus Navigator 🚌
 
-A modern web application for navigating bus routes in Dhaka, Bangladesh. Built with React, Vite, and Supabase.
+A portfolio project: a bus-route and fare finder for Dhaka, Bangladesh. Built with React, Vite, and a small local Express + MySQL backend.
+
+**Status:** work in progress, running locally only. Not deployed.
 
 ## 🚀 Features
 
-- **Smart Route Planning** - Find the best bus routes with minimal transfers
-- **Real-time Information** - Get accurate fare estimates and journey times
-- **Interactive Maps** - Visual route planning with Leaflet maps
-- **Multi-language Support** - English and Bangla interface
-- **Community Feedback** - Submit route updates and feedback
-- **Responsive Design** - Works on all devices
+- **Route Planning** - Find direct and one-transfer bus routes between two stops
+- **Distance-based Fare Estimates** - ৳2.42/km, ৳10 minimum, rounded to the nearest ৳5
+- **Interactive Map** - Leaflet + OpenStreetMap
+- **Multi-language UI** - English and Bangla
+- **Community Feedback Form** - Submits into the local database
+- **Responsive, dark-mode-aware Design**
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion
-- **Maps**: Leaflet.js with OpenStreetMap
-- **Database**: Supabase (PostgreSQL)
-- **Deployment**: Vercel ready
+- **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion, React Router
+- **Map**: Leaflet.js with OpenStreetMap tiles
+- **Backend**: Node/Express API (`server/`)
+- **Database**: MySQL (tested against MySQL 8; MariaDB via XAMPP/WAMP should also work)
 
 ## 🔧 Setup Instructions
 
 ### Prerequisites
-- Node.js 18+
-- npm or yarn
-- Supabase account
+- Node.js 20+ (uses `node --env-file`, no `dotenv` dependency)
+- A local MySQL server (XAMPP, WAMP, or a standalone MySQL install)
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone the repository and install dependencies**
    ```bash
-   git clone https://github.com/yourusername/dhaka-bus-navigator.git
+   git clone https://github.com/Muhit-1/dhaka-bus-navigator.git
    cd dhaka-bus-navigator
-   ```
-
-2. **Install dependencies**
-   ```bash
    npm install
    ```
 
-3. **Environment Setup**
+2. **Configure the backend**
    ```bash
-   cp .env.example .env.local
+   cp server/.env.example server/.env
    ```
-   
-   Fill in your Supabase credentials in `.env.local`:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+   Edit `server/.env` with your local MySQL credentials (`DB_USER`, `DB_PASSWORD`, etc.). The frontend needs no environment variables — in dev it talks to the API through a Vite proxy (`/api` → `http://localhost:5000`).
 
-4. **Database Setup**
-   
-   Create tables in Supabase for the following data:
-   
-   - **Stops**: Stores bus stop information, coordinates, and nearby landmarks
-   - **Routes**: Stores bus routes, stops, colors, frequency, and polyline data
-   - **Fares**: Stores fare details between stops on a route
-   - **User Feedback**: Stores feedback submitted by users
-   - **Favorites**: Stores users' favorite routes
-
-5. **Start development server**
+3. **Create and seed the database**
    ```bash
-   npm run dev
+   npm run db:seed
    ```
+   This creates the `dhaka_bus_navigator` database (see `server/schema.sql`) and, if `stops.txt`/`routes.txt` are present at the repo root, parses them and geocodes each stop via OpenStreetMap Nominatim (rate-limited, cached to `data/geocoded-stops.json` so re-runs don't re-hit the network). Those two `.txt` files aren't checked into the repo — ask the project owner for a copy, or point the parser at your own route data.
 
-## 🔒 Security Features
+4. **Run the app** (frontend + backend together)
+   ```bash
+   npm run dev:all
+   ```
+   Or run them separately: `npm run server:dev` and `npm run dev`.
 
-- **Row Level Security (RLS)** enabled on all Supabase tables
-- **Input validation** and sanitization on all user inputs
-- **Content Security Policy** headers for XSS protection
-- **Environment variables** for sensitive data
-- **No hardcoded secrets** in the codebase
+   The app is served at `http://localhost:3000`, the API at `http://localhost:5000`.
 
-## 📱 Deployment
+## 🗄️ Data notes
 
-### Vercel (Recommended)
-1. Connect your GitHub repository to Vercel
-2. Add environment variables in the Vercel dashboard
-3. Deploy automatically on push
+- Stop coordinates aren't hand-curated — they come from a best-effort OpenStreetMap geocode of each stop name. Expect some to be missing or approximate; the fare calculator falls back to the ৳10 minimum fare for any route where coordinates are unavailable.
+- `routes.txt` (as sourced) only covers routes B–M; N–Z and numbered routes are not included.
+- The `fares` table exists in the schema for manual per-segment overrides but isn't seeded — fares are computed client-side from stop coordinates.
 
-## 🖼️ Screenshots
+## 📌 Known limitations
 
-![Home Page](https://i.ibb.co/RGHMc5x2/screencapture-localhost-3000-2025-10-01-04-33-13.png)
-
+- No authentication — feedback submissions are anonymous, unrate-limited beyond basic length caps.
+- Search is a simple direct/one-transfer lookup over in-memory data, not a real-time transit engine.
+- Not yet deployed anywhere; this repo is meant to be run locally.
 
 ## 🤝 Contributing
 
@@ -98,10 +81,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- OpenStreetMap contributors for map data
-- Supabase for backend services
-- React and Vite teams for the amazing tools
-
----
-
-**⚠️ Security Notice**: Never commit `.env.local` files or expose API keys. Always use environment variables for sensitive data.
+- OpenStreetMap / Nominatim for map tiles and geocoding
+- React and Vite teams for the tooling

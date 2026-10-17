@@ -11,7 +11,7 @@ import {
   Send
 } from 'lucide-react'
 import { Button, Input, Card, Badge, Modal } from '../components/ui'
-import { submitFeedback } from '../lib/supabase'
+import { submitFeedback } from '../lib/api'
 
 const FeedbackPage = () => {
   const [formData, setFormData] = useState({
@@ -87,12 +87,13 @@ const FeedbackPage = () => {
     
     try {
       const feedbackData = {
-        ...formData,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        user_id: 'anonymous' // In a real app, this would be the logged-in user's ID
+        feedback_type: formData.feedbackType,
+        stop_id: formData.stopId || null,
+        route_id: formData.routeId || null,
+        description: formData.description,
+        contact_email: formData.contactEmail || null
       }
-      
+
       await submitFeedback(feedbackData)
       setShowSuccessModal(true)
       setFormData({

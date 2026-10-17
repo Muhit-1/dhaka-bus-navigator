@@ -1,30 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
+// Talks to the local Express API (server/index.js), which reads/writes MySQL.
+// In dev, Vite proxies /api to http://localhost:5000 (see vite.config.js).
 
-// Configure from Vite env
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Database schema types
-export const DB_TABLES = {
-  ROUTES: 'routes',
-  STOPS: 'stops',
-  FARES: 'fares',
-  USER_FEEDBACK: 'user_feedback',
-  FAVORITES: 'favorites'
-}
-
-// No placeholder data; rely on real database contents
-
-// API functions
 export const fetchRoutes = async () => {
   try {
-    const { data, error } = await supabase
-      .from(DB_TABLES.ROUTES)
-      .select('*')
-    
-    if (error) throw error
+    const res = await fetch('/api/routes')
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+    const data = await res.json()
     return Array.isArray(data) ? data : []
   } catch (error) {
     console.error('Failed to fetch routes:', error)
@@ -34,13 +15,10 @@ export const fetchRoutes = async () => {
 
 export const fetchStops = async () => {
   try {
-    const { data, error } = await supabase
-      .from(DB_TABLES.STOPS)
-      .select('id, name, lat, lng, nearby_landmarks')
-    
-    if (error) throw error
-    const rows = Array.isArray(data) ? data : []
-    return rows
+    const res = await fetch('/api/stops')
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
   } catch (error) {
     console.error('Failed to fetch stops:', error)
     return []
@@ -49,11 +27,9 @@ export const fetchStops = async () => {
 
 export const fetchFares = async () => {
   try {
-    const { data, error } = await supabase
-      .from(DB_TABLES.FARES)
-      .select('*')
-    
-    if (error) throw error
+    const res = await fetch('/api/fares')
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+    const data = await res.json()
     return Array.isArray(data) ? data : []
   } catch (error) {
     console.error('Failed to fetch fares:', error)
@@ -62,39 +38,36 @@ export const fetchFares = async () => {
 }
 
 export const submitFeedback = async (feedbackData) => {
-  try {
-    // Input validation and sanitization
-    const sanitizedData = {
-      feedback_type: feedbackData.feedback_type?.toString().slice(0, 50) || null,
-      stop_id: feedbackData.stop_id?.toString().slice(0, 50) || null,
-      route_id: feedbackData.route_id?.toString().slice(0, 50) || null,
-      description: feedbackData.description?.toString().slice(0, 1000) || '',
-      contact_email: feedbackData.contact_email?.toString().slice(0, 100) || null,
-      status: 'pending'
-    }
-    
-    const { data, error } = await supabase
-      .from(DB_TABLES.USER_FEEDBACK)
-      .insert([sanitizedData])
-      .select()
-    
-    if (error) throw error
-    return data
-  } catch (error) {
-    console.error('Error submitting feedback:', error)
-    throw error
+  const sanitizedData = {
+    feedback_type: feedbackData.feedback_type?.toString().slice(0, 50) || null,
+    stop_id: feedbackData.stop_id?.toString().slice(0, 50) || null,
+    route_id: feedbackData.route_id?.toString().slice(0, 50) || null,
+    description: feedbackData.description?.toString().slice(0, 1000) || '',
+    contact_email: feedbackData.contact_email?.toString().slice(0, 100) || null
   }
+
+  const res = await fetch('/api/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(sanitizedData)
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || `Request failed: ${res.status}`)
+  }
+
+  return res.json()
 }
 
 export const searchRoutes = async (fromStopId, toStopId) => {
   const routes = await fetchRoutes()
   const stops = await fetchStops()
-  const fares = await fetchFares()
   const stopMap = new Map(stops.map(s => [String(s.id), s]))
-  
+
   // Simple route finding algorithm
   const results = []
-  
+
   for (const route of routes) {
     const stopIds = (route.stops || []).map(String)
     const fromIndex = stopIds.indexOf(String(fromStopId))
@@ -119,32 +92,32 @@ export const searchRoutes = async (fromStopId, toStopId) => {
       transfers: 0
     })
   }
-  
+
   // Find transfer routes (simplified)
   for (const route1 of routes) {
     const fromIndex1 = route1.stops.indexOf(fromStopId)
     if (fromIndex1 === -1) continue
-    
+
     for (const route2 of routes) {
       if (route1.id === route2.id) continue
-      
+
       const toIndex2 = route2.stops.indexOf(toStopId)
       if (toIndex2 === -1) continue
-      
+
       // Check for common stops
       for (const stopId of route1.stops) {
         const stopIndex1 = route1.stops.indexOf(stopId)
         const stopIndex2 = route2.stops.indexOf(stopId)
-        
-        if (stopIndex1 !== -1 && stopIndex2 !== -1 && 
+
+        if (stopIndex1 !== -1 && stopIndex2 !== -1 &&
             stopIndex1 > fromIndex1 && stopIndex2 < toIndex2) {
-          
+
           const route1Stops = route1.stops.slice(fromIndex1, stopIndex1 + 1)
           const route2Stops = route2.stops.slice(stopIndex2, toIndex2 + 1)
-          
+
           const fare1 = calculateDistanceFare(route1Stops, stopMap)
           const fare2 = calculateDistanceFare(route2Stops, stopMap)
-          
+
           results.push({
             id: `transfer-${route1.id}-${route2.id}`,
             type: 'transfer',
@@ -155,11 +128,14 @@ export const searchRoutes = async (fromStopId, toStopId) => {
             transfers: 1,
             transferStop: stopId
           })
+          // Only keep the first valid transfer point for this route pair -
+          // otherwise every shared stop produces a near-identical duplicate result.
+          break
         }
       }
     }
   }
-  
+
   return results.sort((a, b) => {
     // Sort by transfers first, then by fare
     if (a.transfers !== b.transfers) {

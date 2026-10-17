@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { Button, Input, Card, Badge, Modal } from '../ui'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { submitFeedback } from '../../lib/supabase'
+import { submitFeedback } from '../../lib/api'
 
 const FeedbackSection = () => {
   const [formData, setFormData] = useState({

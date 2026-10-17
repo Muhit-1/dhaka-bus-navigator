@@ -14,7 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { Button, Card, Badge, LoadingSkeleton } from '../components/ui'
-import { searchRoutes, fetchStops } from '../lib/supabase'
+import { searchRoutes, fetchStops } from '../lib/api'
 
 const SearchResultsPage = () => {
   const location = useLocation()
@@ -53,12 +53,12 @@ const SearchResultsPage = () => {
   }, [fromStopId, toStopId, navigate])
 
   const getStopName = (stopId) => {
-    const stop = stops.find(s => s.id === stopId)
+    const stop = stops.find(s => String(s.id) === String(stopId))
     return stop ? stop.name : 'Unknown Stop'
   }
 
   const getStopDetails = (stopId) => {
-    return stops.find(s => s.id === stopId)
+    return stops.find(s => String(s.id) === String(stopId))
   }
 
   const sortedRoutes = routes
@@ -106,7 +106,7 @@ const SearchResultsPage = () => {
           </div>
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
-              <RouteCardSkeleton key={i} />
+              <LoadingSkeleton key={i} height="h-32" width="w-full" />
             ))}
           </div>
         </div>

@@ -17,8 +17,8 @@ import {
   Banknote
 } from 'lucide-react'
 import { Button, Card, Badge, LoadingSkeleton } from '../components/ui'
-import Map from '../components/Map'
-import { fetchStops, fetchRoutes } from '../lib/supabase'
+import LeafletMap from '../components/LeafletMap'
+import { fetchStops, fetchRoutes } from '../lib/api'
 
 const StopDetailPage = () => {
   const { stopId } = useParams()
@@ -38,17 +38,17 @@ const StopDetailPage = () => {
           fetchRoutes()
         ])
         
-        const stopData = stopsData.find(s => s.id === stopId)
+        const stopData = stopsData.find(s => String(s.id) === String(stopId))
         if (!stopData) {
           navigate('/')
           return
         }
-        
+
         setStop(stopData)
-        
+
         // Find routes that pass through this stop
-        const passingRoutes = routesData.filter(route => 
-          route.stops.includes(stopId)
+        const passingRoutes = routesData.filter(route =>
+          route.stops.some(id => String(id) === String(stopId))
         )
         setRoutes(passingRoutes)
         
@@ -197,7 +197,7 @@ const StopDetailPage = () => {
               <div className="flex items-center space-x-2">
                 <MapPin className="w-4 h-4 text-secondary-500" />
                 <span className="text-sm text-secondary-600">
-                  {stop.coordinates.lat.toFixed(4)}, {stop.coordinates.lng.toFixed(4)}
+                  {typeof stop.lat === 'number' ? stop.lat.toFixed(4) : '—'}, {typeof stop.lng === 'number' ? stop.lng.toFixed(4) : '—'}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
@@ -382,10 +382,10 @@ const StopDetailPage = () => {
               <h2 className="text-xl font-semibold text-secondary-900 mb-4">
                 Stop Location
               </h2>
-              <Map
+              <LeafletMap
                 stops={[stop]}
-                routes={routes}
-                selectedStopId={stopId}
+                fromLocation={stop.name}
+                toLocation={stop.name}
                 height="500px"
               />
               

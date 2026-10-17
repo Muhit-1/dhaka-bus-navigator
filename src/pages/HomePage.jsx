@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { MapPin, Search, ArrowRight, ArrowLeft, Clock, Users, Route } from 'lucide-react'
 import { Button, Input, Card } from '../components/ui'
 import { useLanguage } from '../contexts/LanguageContext'
-import { fetchStops, searchRoutes } from '../lib/supabase'
+import { fetchStops, searchRoutes } from '../lib/api'
 
 const HomePage = () => {
   const [fromLocation, setFromLocation] = useState('')

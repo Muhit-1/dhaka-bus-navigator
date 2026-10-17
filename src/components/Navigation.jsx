@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { 
-  Bus, 
-  Search, 
-  MapPin, 
-  MessageSquare, 
-  Info, 
-  Settings, 
-  Menu, 
+import {
+  Bus,
+  Search,
+  MapPin,
+  MessageSquare,
+  Info,
+  Settings,
+  Menu,
   X,
   Sun,
   Moon
@@ -20,22 +21,40 @@ const Navigation = ({ onSettingsClick }) => {
   const [activeSection, setActiveSection] = useState('home')
   const { isDark, toggleTheme } = useTheme()
   const { t } = useLanguage()
+  const navigate = useNavigate()
+  const routerLocation = useLocation()
 
   const navItems = [
     { id: 'home', label: t('nav_home'), icon: Bus },
-    { id: 'feedback', label: t('nav_feedback'), icon: MessageSquare }
+    { id: 'feedback', label: t('nav_feedback'), icon: MessageSquare },
+    { id: 'about', label: 'About', icon: Info, isRoute: true, path: '/about' }
   ]
 
   const scrollToSection = (sectionId) => {
+    if (routerLocation.pathname !== '/') {
+      navigate('/')
+      setIsMobileMenuOpen(false)
+      return
+    }
     const element = document.getElementById(sectionId)
     if (element) {
-      element.scrollIntoView({ 
+      element.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       })
       setActiveSection(sectionId)
       setIsMobileMenuOpen(false)
     }
+  }
+
+  const handleNavClick = (item) => {
+    if (item.isRoute) {
+      navigate(item.path)
+      setActiveSection(item.id)
+      setIsMobileMenuOpen(false)
+      return
+    }
+    scrollToSection(item.id)
   }
 
   const handleSettingsClick = () => {
@@ -70,7 +89,7 @@ const Navigation = ({ onSettingsClick }) => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => scrollToSection(item.id)}
+                  onClick={() => handleNavClick(item)}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     activeSection === item.id
                       ? 'bg-primary-100 text-primary-700'
@@ -135,7 +154,7 @@ const Navigation = ({ onSettingsClick }) => {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => scrollToSection(item.id)}
+                    onClick={() => handleNavClick(item)}
                     className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full text-left ${
                       activeSection === item.id
                         ? 'bg-primary-100 text-primary-700'

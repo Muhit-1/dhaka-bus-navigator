@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MapPin, Search, ArrowRight, ArrowLeft, Clock, Users, Route } from 'lucide-react'
+import { MapPin, Search, ArrowRight, ArrowLeft, Clock, Users, Route, ExternalLink } from 'lucide-react'
 import { Button, Input, Card, Modal } from '../ui'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { fetchStops, searchRoutes } from '../../lib/supabase'
-import GoogleMap from '../GoogleMap'
+import { fetchStops, searchRoutes } from '../../lib/api'
+import LeafletMap from '../LeafletMap'
 
 const HeroSection = () => {
+  const navigate = useNavigate()
   const [fromLocation, setFromLocation] = useState('')
   const [toLocation, setToLocation] = useState('')
   const [fromSuggestions, setFromSuggestions] = useState([])
@@ -20,7 +22,8 @@ const HeroSection = () => {
   const [showResults, setShowResults] = useState(false)
   const [showMoreModal, setShowMoreModal] = useState(false)
   const [selectedRoute, setSelectedRoute] = useState(null)
-  
+  const [lastSearchStopIds, setLastSearchStopIds] = useState(null)
+
   const { t } = useLanguage()
 
   useEffect(() => {
@@ -72,9 +75,11 @@ const HeroSection = () => {
   const handleSuggestionClick = (stop, type) => {
     if (type === 'from') {
       setFromLocation(stop.name)
+      setFromSuggestions([])
       setShowFromSuggestions(false)
     } else {
       setToLocation(stop.name)
+      setToSuggestions([])
       setShowToSuggestions(false)
     }
   }
@@ -98,7 +103,8 @@ const HeroSection = () => {
       const results = await searchRoutes(fromStop.id, toStop.id)
       setSearchResults(results)
       setShowResults(true)
-      
+      setLastSearchStopIds({ fromStopId: fromStop.id, toStopId: toStop.id })
+
       // Save to recent searches
       const newSearch = {
         from: fromLocation,
@@ -121,12 +127,21 @@ const HeroSection = () => {
   const handleRecentSearch = (search) => {
     setFromLocation(search.from)
     setToLocation(search.to)
+    closeSuggestions()
   }
 
   const swapLocations = () => {
     const temp = fromLocation
     setFromLocation(toLocation)
     setToLocation(temp)
+    closeSuggestions()
+  }
+
+  const closeSuggestions = () => {
+    setFromSuggestions([])
+    setToSuggestions([])
+    setShowFromSuggestions(false)
+    setShowToSuggestions(false)
   }
 
   const getStopName = (stopId) => {
@@ -265,7 +280,18 @@ const HeroSection = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-6 space-y-3 relative z-0"
                 >
-                  <h3 className="text-lg font-semibold text-white mb-4">Route Options</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">Route Options</h3>
+                    <button
+                      onClick={() => navigate('/search', {
+                        state: { ...lastSearchStopIds, fromLocation, toLocation }
+                      })}
+                      className="flex items-center space-x-1 text-sm text-primary-100 hover:text-white transition-colors"
+                    >
+                      <span>Open full results page</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   {searchResults.slice(0, 3).map((route, index) => (
                     <Card 
                       key={route.id} 
@@ -389,7 +415,7 @@ const HeroSection = () => {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="h-96 lg:h-[500px] relative z-0"
             >
-              <GoogleMap 
+              <LeafletMap
                 stops={stops}
                 searchResults={selectedRoute ? [selectedRoute] : searchResults}
                 fromLocation={fromLocation}

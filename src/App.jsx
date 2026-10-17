@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 // Components
 import Navigation from './components/Navigation'
@@ -9,6 +10,25 @@ import Footer from './components/Footer'
 import SettingsModal from './components/SettingsModal'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LanguageProvider } from './contexts/LanguageContext'
+
+// Pages
+import SearchResultsPage from './pages/SearchResultsPage'
+import RouteDetailPage from './pages/RouteDetailPage'
+import StopDetailPage from './pages/StopDetailPage'
+import AboutPage from './pages/AboutPage'
+import FeedbackPage from './pages/FeedbackPage'
+import SettingsPage from './pages/SettingsPage'
+
+const HomeLayout = () => (
+  <>
+    <section id="home">
+      <HeroSection />
+    </section>
+    <section id="feedback" className="mt-8 sm:mt-12 lg:mt-16">
+      <FeedbackSection />
+    </section>
+  </>
+)
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
@@ -55,34 +75,36 @@ function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
+      <BrowserRouter>
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-secondary-900 dark:to-secondary-800">
         <Navigation onSettingsClick={() => setShowSettings(true)} />
-        
+
         <motion.main
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Hero Section */}
-          <section id="home">
-            <HeroSection />
-          </section>
-
-          {/* Feedback Section */}
-          <section id="feedback" className="mt-8 sm:mt-12 lg:mt-16">
-            <FeedbackSection />
-          </section>
+          <Routes>
+            <Route path="/" element={<HomeLayout />} />
+            <Route path="/search" element={<SearchResultsPage />} />
+            <Route path="/route/:routeId" element={<RouteDetailPage />} />
+            <Route path="/stop/:stopId" element={<StopDetailPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
         </motion.main>
 
         {/* Footer */}
         <Footer />
 
         {/* Settings Modal */}
-        <SettingsModal 
-          isOpen={showSettings} 
-          onClose={() => setShowSettings(false)} 
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
         />
       </div>
+      </BrowserRouter>
       </LanguageProvider>
     </ThemeProvider>
   )

@@ -5,7 +5,7 @@ import { Button } from './ui'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-const GoogleMap = ({ 
+const LeafletMap = ({
   stops = [], 
   searchResults = [],
   fromLocation = '',
@@ -121,7 +121,7 @@ const GoogleMap = ({
         if (searchResults.length > 0) {
           const selectedRoute = searchResults[0]
           if (selectedRoute.transfers > 0 && selectedRoute.transferStop) {
-            const transferStop = stops.find(s => s.id === selectedRoute.transferStop)
+            const transferStop = stops.find(s => String(s.id) === String(selectedRoute.transferStop))
             if (transferStop && typeof transferStop.lat === 'number' && typeof transferStop.lng === 'number') {
               const transferMarker = L.circleMarker([transferStop.lat, transferStop.lng], {
                 radius: 8,
@@ -324,4 +324,4 @@ const GoogleMap = ({
   )
 }
 
-export default GoogleMap
+export default LeafletMap

@@ -15,8 +15,8 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { Button, Card, Badge, LoadingSkeleton } from '../components/ui'
-import Map from '../components/Map'
-import { fetchStops } from '../lib/supabase'
+import LeafletMap from '../components/LeafletMap'
+import { fetchStops } from '../lib/api'
 
 const RouteDetailPage = () => {
   const { routeId } = useParams()
@@ -51,7 +51,7 @@ const RouteDetailPage = () => {
   }, [route, navigate])
 
   const getStopDetails = (stopId) => {
-    return stops.find(s => s.id === stopId)
+    return stops.find(s => String(s.id) === String(stopId))
   }
 
   const getStopName = (stopId) => {
@@ -306,11 +306,11 @@ const RouteDetailPage = () => {
                 <h2 className="text-xl font-semibold text-secondary-900 mb-4">
                   Route Map
                 </h2>
-                <Map
-                  stops={route.stops.map(stopId => getStopDetails(stopId)).filter(Boolean)}
-                  routes={route.routes}
-                  selectedStopId={selectedStopId}
-                  onStopClick={handleStopClick}
+                <LeafletMap
+                  stops={stops}
+                  searchResults={[route]}
+                  fromLocation={getStopName(route.stops[0])}
+                  toLocation={getStopName(route.stops[route.stops.length - 1])}
                   height="500px"
                 />
               </div>
